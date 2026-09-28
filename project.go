@@ -15,6 +15,10 @@ type project struct {
 	basePath string
 }
 
+var sshCommand = func(host, command string) *exec.Cmd {
+	return exec.Command("ssh", host, command)
+}
+
 func newProject(path string) *project {
 	if isRemote(path) {
 		idx := strings.Index(path, ":")
@@ -115,7 +119,7 @@ func shq(s string) string {
 }
 
 func runSSH(host, cmd string, stdin []byte) ([]byte, error) {
-	c := exec.Command("ssh", host, cmd)
+	c := sshCommand(host, cmd)
 	if stdin != nil {
 		c.Stdin = bytes.NewReader(stdin)
 	}

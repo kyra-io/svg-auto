@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"
 
 permissions:
   contents: read
@@ -55,3 +57,32 @@ jobs:
       - name: Smoke test executable (Windows)
         if: runner.os == 'Windows'
         run: .\svg-auto.exe --help
+
+  e2e:
+    name: E2E (${{ matrix.name }})
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+          - name: Windows
+            os: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run live IcoMoon end-to-end test
+        run: go test -tags=e2e -run '^TestEndToEndIcoMoon$' -v -count=1 -timeout=9m
