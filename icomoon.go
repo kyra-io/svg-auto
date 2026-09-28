@@ -169,6 +169,11 @@ func selectAllIcons(ctx context.Context, n int) error {
 }
 
 func downloadIcons(ctx context.Context, downloadDir string) (string, error) {
+	downloadDir, err := filepath.Abs(downloadDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve the download directory: %w", err)
+	}
+
 	if err := chromedp.Run(ctx,
 		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).WithDownloadPath(downloadDir).WithEventsEnabled(true),
 		chromedp.Navigate(icomoonImageURL),
@@ -217,9 +222,13 @@ func downloadIcons(ctx context.Context, downloadDir string) (string, error) {
 	}
 
 	var guid string
+	timer := time.NewTimer(downloadTimeout)
+	defer timer.Stop()
 	select {
 	case <-ctx.Done():
 		return "", fmt.Errorf("timeout waiting for the download: %w", ctx.Err())
+	case <-timer.C:
+		return "", fmt.Errorf("timeout waiting for the download after %s", downloadTimeout)
 	case guid = <-done:
 	}
 

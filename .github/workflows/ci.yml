@@ -70,8 +70,10 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-latest
+            no_sandbox: "1"
           - name: Windows
             os: windows-latest
+            no_sandbox: "0"
 
     steps:
       - name: Check out repository
@@ -85,4 +87,6 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Run live IcoMoon end-to-end test
+        env:
+          SVG_AUTO_NO_SANDBOX: ${{ matrix.no_sandbox }}
         run: go test -tags=e2e -run '^TestEndToEndIcoMoon$' -v -count=1 -timeout=9m

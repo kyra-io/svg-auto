@@ -12,6 +12,7 @@ import (
 )
 
 const outputDir = "output"
+const browserNoSandboxEnvVar = "SVG_AUTO_NO_SANDBOX"
 
 func main() {
 	if err := run(); err != nil {
@@ -34,6 +35,9 @@ func run() error {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(browserPath),
 	)
+	if os.Getenv(browserNoSandboxEnvVar) == "1" {
+		opts = append(opts, chromedp.NoSandbox)
+	}
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancelAlloc()
 
