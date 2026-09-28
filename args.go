@@ -7,9 +7,10 @@ import (
 	"strings"
 )
 
-const usage = `Usage: svg-auto <file1.svg> [file2.svg ...]
+const usage = `Usage: svg-auto <file.svg|.> [more.svg ...]
 
 Imports SVG files into IcoMoon and downloads the generated package (.zip) to ./output/.
+Use . to import every SVG file in the current directory.
 
 Options:
   -h, --help    show this help
@@ -27,20 +28,64 @@ func parseArgs() ([]string, error) {
 		}
 	}
 
+	return resolveSVGArgs(args)
+}
+
+func resolveSVGArgs(args []string) ([]string, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("%s", usage)
 	}
 
 	files := make([]string, 0, len(args))
+	seen := make(map[string]bool)
+	add := func(path string) error {
+		if err := validateSVG(path); err != nil {
+			return err
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return fmt.Errorf("failed to get the absolute path of %q: %w", path, err)
+		}
+		if !seen[abs] {
+			seen[abs] = true
+			files = append(files, abs)
+		}
+		return nil
+	}
+
 	for _, arg := range args {
-		if err := validateSVG(arg); err != nil {
+		if arg == "." {
+			entries, err := os.ReadDir(".")
+			if err != nil {
+				return nil, fmt.Errorf("failed to read the current directory: %w", err)
+			}
+
+			found := 0
+			for _, entry := range entries {
+				if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".svg") {
+					continue
+				}
+				info, err := entry.Info()
+				if err != nil {
+					return nil, fmt.Errorf("failed to inspect %q: %w", entry.Name(), err)
+				}
+				if !info.Mode().IsRegular() {
+					continue
+				}
+				if err := add(entry.Name()); err != nil {
+					return nil, err
+				}
+				found++
+			}
+			if found == 0 {
+				return nil, fmt.Errorf("no SVG files found in the current directory")
+			}
+			continue
+		}
+
+		if err := add(arg); err != nil {
 			return nil, err
 		}
-		abs, err := filepath.Abs(arg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get the absolute path of %q: %w", arg, err)
-		}
-		files = append(files, abs)
 	}
 	return files, nil
 }

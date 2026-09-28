@@ -96,6 +96,14 @@ sudo make install
 svg-auto icon1.svg icon2.svg icon3.svg
 ```
 
+To import every `.svg` file in the current directory (non-recursively), use `.`:
+
+```sh
+svg-auto .
+```
+
+You can also combine `.` with explicit file names. Duplicate paths are imported only once.
+
 From a local checkout (without installing):
 
 ```sh
@@ -105,9 +113,10 @@ go run . icon1.svg icon2.svg icon3.svg
 ### Options
 
 ```
-Usage: svg-auto <file1.svg> [file2.svg ...]
+Usage: svg-auto <file.svg|.> [more.svg ...]
 
 Imports SVG files into IcoMoon and downloads the generated package (.zip) to ./output/.
+Use . to import every SVG file in the current directory.
 
 Options:
   -h, --help    show this help
