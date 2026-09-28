@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -40,6 +41,9 @@ func (p *project) remote() bool {
 }
 
 func (p *project) target(rel string) string {
+	if p.remote() {
+		return path.Join(p.basePath, filepath.ToSlash(rel))
+	}
 	return filepath.Join(p.basePath, rel)
 }
 

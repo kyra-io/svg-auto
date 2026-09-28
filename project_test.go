@@ -36,7 +36,7 @@ func TestIsRemote(t *testing.T) {
 }
 
 func TestProjectTarget(t *testing.T) {
-	if got := newProject("/srv/app").target("icons/sprite.svg"); got != "/srv/app/icons/sprite.svg" {
+	if got, want := newProject("/srv/app").target("icons/sprite.svg"), filepath.Join("/srv/app", "icons/sprite.svg"); got != want {
 		t.Errorf("unexpected target: %s", got)
 	}
 	p := newProject("user@host:/srv/app")
@@ -45,6 +45,9 @@ func TestProjectTarget(t *testing.T) {
 	}
 	if got := p.target("icons/sprite.svg"); got != "/srv/app/icons/sprite.svg" {
 		t.Errorf("unexpected remote target: %s", got)
+	}
+	if got := newProject("user@host:~/app").target("icons/sprite.svg"); got != "~/app/icons/sprite.svg" {
+		t.Errorf("unexpected remote home target: %s", got)
 	}
 }
 
