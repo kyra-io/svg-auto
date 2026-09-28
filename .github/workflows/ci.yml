@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            binary: svg-auto
+          - name: Windows
+            os: windows-latest
+            binary: svg-auto.exe
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Run race detector
+        run: go test -race ./...
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Build executable
+        run: go build -o ${{ matrix.binary }} .
+
+      - name: Smoke test executable (Linux)
+        if: runner.os == 'Linux'
+        run: ./svg-auto --help
+
+      - name: Smoke test executable (Windows)
+        if: runner.os == 'Windows'
+        run: .\svg-auto.exe --help
